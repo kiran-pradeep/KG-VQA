@@ -38,8 +38,6 @@ credentials = {
 
 project_id =os.getenv("WATSONX_PROJECT_ID")
 
-# os.environ["LANGSMITH_API_KEY"] = "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"
-# os.environ["LANGSMITH_TRACING"] = "true"
 
 if GCP_CREDENTIALS and GCP_PROJECT and GCP_REGION:
     aiplatform.init(
