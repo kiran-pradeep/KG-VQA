@@ -1,0 +1,8 @@
+.env
+data
+outputs
+previous_versions
+results
+__pycache__/
+**/__pycache__/
+*.py[cod]
