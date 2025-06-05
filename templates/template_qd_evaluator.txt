@@ -1,0 +1,73 @@
+You are an expert and smart linguist.
+
+Your task is to evaluate the quality of predicted sub-questions for a given complex question using the provided context. The context contains all the information needed to answer the question and are unstructured (e.g., paragraphs or passages).
+You must assess the sub-questions along five criteria: Relevance, Completeness, Granularity, Correctness, and Coherence.
+
+Context:
+{CONTEXT}
+
+This context contains the information needed to answer the question. It includes unstructured data (e.g., passages or paragraphs) relevant to answering the original question.
+
+Original Question:
+{QUESTION}
+
+Predicted Sub-questions:
+{SUB_QUESTIONS}
+
+Evaluation Criteria (with Definitions):
+1. Relevance: For each sub-question, determine whether it is necessary for answering the original question using the provided context.
+    - "relevant": The sub-question addresses an aspect of the original question.
+    - "irrelevant": The sub-question does not contribute toward answering the original question.
+
+2. Completeness: Evaluate whether the full set of sub-questions covers all the required information needed to answer the original question.
+    - "complete": All necessary reasoning steps are included.
+    - "incomplete": Some essential parts of the logic or information are missing.
+
+3. Granularity: Judge the appropriateness of the number and detail level of the sub-questions.
+    - "optimal": The number and scope of sub-questions are just right.
+    - "over-decomposed": Too many sub-questions or unnecessarily fine-grained.
+    - "under-decomposed": Too few sub-questions or lacking in logical breakdown.
+
+4. Correctness: For each sub-question, assess whether it is factually and logically valid based on the original question and context.
+    - "correct": Accurately framed and valid.
+    - "incorrect": Contains factual errors, logical flaws, or misinterpretations.
+
+5. Coherence: Evaluate whether the sub-question is clearly and logically worded.
+    - "coherent": Grammatically correct, well-structured, and understandable.
+    - "incoherent": Ambiguous, poorly phrased, or confusing.
+
+Additional Notes:
+- Sub-questions should represent distinct steps of reasoning or information retrieval that are needed to answer the original question.
+- The goal is for the combined answers to the sub-questions to logically lead to the final answer.
+
+Output Format:
+Please respond with a JSON object structured as follows:
+
+```json
+{{
+  "chain_of_thought_reasoning": "Explanation of the logical analysis that justifies the evaluation.",
+  "relevance": {{
+    "Sub-Question 1": "relevant" or "irrelevant",
+    "Sub-Question 2": "relevant" or "irrelevant",
+    ...
+  }},
+  "correctness": {{
+    "Sub-Question 1": "correct" or "incorrect",
+    "Sub-Question 2": "correct" or "incorrect",
+    ...
+  }},
+  "coherence": {{
+    "Sub-Question 1": "coherent" or "incoherent",
+    "Sub-Question 2": "coherent" or "incoherent",
+    ...
+  }},
+  "completeness": "complete" or "incomplete",
+  "granularity": "optimal" or "over-decomposed" or "under-decomposed",
+}}
+```
+
+Do not include any extra commentary or explanation. Return only the JSON.
+Ensure the JSON is valid and properly formatted.
+
+Take a deep breath and think step by step. If you do the task correctly, I will give you 1 million dollars.
+
