@@ -1,0 +1,35 @@
+setting_name: QD_EVAL_BASE_AG
+
+team_agents:
+  # information_retriever:
+  #   engine: 'meta-llama/Meta-Llama-3.1-70B-Instruct'
+  #   tools:
+  #     extract_keywords:
+  #       template_name: 'extract_keywords'
+  #       engine_config:
+  #         engine_name: 'meta-llama/Meta-Llama-3.1-70B-Instruct'
+  #         temperature: 0.2
+  #       parser_name: 'python_list_output_parser'
+  #     retrieve_entity: {}
+  #     retrieve_context:
+  #       top_k: 5
+
+  evaluator:
+    engine: 'meta-llama/Meta-Llama-3.1-8B-Instruct'
+    tools:
+      qd_evaluator:
+        template_name: 'qd_evaluator_#Q'
+        engine_config:
+          engine_name: 'meta-llama/Meta-Llama-3.1-8B-Instruct'
+          temperature: 0.0
+        parser_name: 'sql_decomposer'
+
+  generator:
+    engine: 'meta-llama/Meta-Llama-3.1-8B-Instruct'
+    tools:
+      answer_generator:
+        template_name: 'answer_generator'
+        engine_config:
+          engine_name: 'meta-llama/Meta-Llama-3.1-8B-Instruct'
+          temperature: 0.0
+        parser_name: 'sql_decomposer'

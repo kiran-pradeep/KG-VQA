@@ -76,7 +76,7 @@ class RunManager:
         if final_response:
             temp_results = {str(question_id): final_response}
         else:
-            temp_results = {str(question_id): 0}
+            temp_results = {str(question_id): None}
         file_path = os.path.join(self.result_directory, "-predictions.json")
         with open(file_path, "r+") as f:
             fcntl.flock(f, fcntl.LOCK_EX)
@@ -193,6 +193,7 @@ class RunManager:
         if state is None:
             print("State is None: ", state)
             return
+        # print(state.execution_history)
         if state.execution_history == [] and results_available:
             try:
                 with open(
@@ -202,22 +203,24 @@ class RunManager:
             except FileNotFoundError:
                 return
         for step in state.execution_history:
-            print(step)
-            # input("Press Enter to continue...")
-            # if "tool_name" in step and step["tool_name"] == "qd_accuracy":
-            #     validation_result = step
-            #     if validation_result.get("tool_name") == "qd_accuracy":
-            #         for validation_for, result in validation_result.items():
-            #             if not isinstance(result, dict):
-            #                 continue
-            #             self.statistics_manager.update_stats(
-            #                 question_id, validation_for, result
-            #             )
+            # print(step)
+            if "qd_result" in step:
+                print(f"Updating final result for question_id: {question_id}")
+                try:
+                    self.statistics_manager.update_stats(
+                        question_id, "qd_result", step["qd_result"]
+                    )
+                except TypeError:
+                    print(
+                        f"!!!Skipping qid: {question_id}. REASON: `exec_res` is None!!!"
+                    )
+                    return
+                
             if "final_result" in step:
                 print(f"Updating final result for question_id: {question_id}")
                 try:
                     self.statistics_manager.update_stats(
-                        question_id, "final_result", step["final_result"]
+                        question_id, "final_result", step["final_result"], state
                     )
                 except TypeError:
                     print(
@@ -226,7 +229,7 @@ class RunManager:
                     return
                 try:
                     self.update_final_predictions(
-                        question_id, step["final_result"]["predicted_label"]
+                        question_id, step["final_result"]["predicted_answer"]
                     )
                 except TypeError:
                     print(
@@ -283,62 +286,3 @@ class RunManager:
         for key, value in sqls.items():
             with open(os.path.join(self.result_directory, f"-{key}.json"), "w") as f:
                 json.dump(value, f, indent=4)
-
-    # def pick_final_sql(self, state: SystemState):
-    #     """
-    #     Picks the final SQL query from the execution history.
-
-    #     Args:
-    #         state (SystemState): The system state after processing the task.
-
-    #     Returns:
-
-    #     """
-    #     execution_history = state.execution_history
-    #     final_sql = ""
-    #     final_sql_execution_status = None
-    #     generated_at_step = None
-    #     for step in execution_history:
-    #         if step["tool_name"] == "generate_candidate":
-    #             sql = step["candidates"][0]["SQL"]
-    #             sql_id = "generate_candidate"
-    #         elif "revise" in step["tool_name"]:
-    #             sql = step["SQL"]
-    #             sql_id = step["tool_name"]
-    #         else:
-    #             continue
-    #         execution_status = DatabaseManager().get_execution_status(sql=sql)
-    #         if not final_sql:
-    #             final_sql = sql
-    #             final_sql_execution_status = execution_status
-    #             generated_at_step = sql_id
-    #         else:
-    #             if execution_status == ExecutionStatus.SYNTACTICALLY_CORRECT:
-    #                 final_sql = sql
-    #                 final_sql_execution_status = execution_status
-    #                 generated_at_step = sql_id
-    #             else:
-    #                 if final_sql_execution_status != ExecutionStatus.SYNTACTICALLY_CORRECT:
-    #                     if execution_status == ExecutionStatus.ZERO_COUNT_RESULT:
-    #                         final_sql = sql
-    #                         final_sql_execution_status = execution_status
-    #                         generated_at_step = sql_id
-    #     final_validation_result = {
-    #         "final_sql": {
-    #             "SQL": final_sql,
-    #             "EXECUTION_STATUS": final_sql_execution_status.value,
-    #             "GENERATED_AT_STEP": generated_at_step
-    #         }
-    #     }
-    #     if execution_history[-1]["tool_name"] == "evaluation":
-    #         final_validation_result = {
-    #             "final_sql": {
-    #                 **execution_history[-1][generated_at_step],
-    #                 "EXECUTION_STATUS": final_sql_execution_status.value,
-    #                 "GENERATED_AT_STEP": generated_at_step
-    #             }
-    #         }
-    #         final_validation_result["final_sql"]["SQL"] = final_validation_result["final_sql"].pop("PREDICTED_SQL")
-
-    #     state.execution_history.append(final_validation_result)
-    #     Logger().dump_history_to_file(state.execution_history)

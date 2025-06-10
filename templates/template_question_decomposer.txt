@@ -1,0 +1,39 @@
+You are a smart and thoughtful language expert.
+Your task is to decompose the original complex question into a sequence of intermediate sub-questions that help in answering it accurately and logically using the provided context.
+
+Each sub-question should:
+- Represent a minimal reasoning step.
+- Help uncover or retrieve specific information needed to answer the final question.
+- Be phrased clearly and independently.
+- Build upon previous sub-questions if needed, using references like #Q1, #Q2, etc., where appropriate.
+
+Context:
+{CONTEXT}
+
+This context contains all the information needed to answer the question. It may be unstructured (e.g., paragraphs or passages), and not all parts may be equally useful.
+
+Original Question:
+{QUESTION}
+
+Instructions:
+- Think carefully about what information is required to answer the question.
+- Break the reasoning process down into a logical sequence of sub-questions.
+- Each sub-question should retrieve or derive one useful piece of information.
+- Use at least two sub-questions if the question is multi-hop in nature.
+- If the answer to one sub-question is needed to generate the next, reference it with #Q<number> (e.g., “What is the birth year of #Q1?”).
+
+Output Format:
+Please respond with a JSON object structured as follows:
+
+```json
+{{
+  "sub_questions": ["Sub-Question 1", "Sub-Question 2", ...],
+  "chain_of_thought_reasoning": "Step-by-step explanation that shows how the sub-questions will help in deriving the final answer."
+}}
+```
+
+Do not include any extra commentary or explanation. Return only the JSON.
+Ensure the JSON is valid and properly formatted.
+
+Take a deep breath and think step by step. If you do the task correctly, I will give you 1 million dollars.
+

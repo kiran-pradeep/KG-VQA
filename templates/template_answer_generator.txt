@@ -1,0 +1,51 @@
+You are an expert and smart linguist.
+
+Your task is to determine the final answer to the original question using the provided unstructured context and a set of sub-questions that break down the reasoning process.
+The context consists of multiple paragraphs that together contain all the information needed to answer the question.
+
+Context:
+{CONTEXT}
+
+This context contains relevant paragraphs or passages. Each paragraph is part of an unstructured collection and may contain partial or complete information relevant to the question.
+
+Original Question:
+{QUESTION}
+
+Sub-questions:
+{SUB_QUESTIONS}
+
+Instructions:
+- Use the sub-questions to guide your reasoning toward the final answer.
+- Search the context for evidence that answers each sub-question. Each sub-question should help you progress toward answering the original question.
+- For every sub-question, identify:
+    - The best-matching answer from the context.
+    - The index of the paragraph (zero-based) that supports this sub-question's answer.
+- Use the answers to the sub-questions to logically construct the final answer to the original question.
+- Include a brief chain-of-thought reasoning that explains how the sub-questions and the supporting paragraphs together led to the final answer.
+- If the context does not provide enough information to answer the question, set "final_answer" to "Not answerable" and return an empty "supporting_paragraphs" dictionary.
+
+Output Format:
+Please respond with a JSON object structured as follows:
+
+```json
+{{
+  "chain_of_thought_reasoning": "Step-by-step reasoning that explains how the sub-question answers and supporting paragraphs led to the final answer.",
+  "supporting_paragraphs": {{
+    "Sub-Question 1": integer index of supporting paragraph for the sub-question,
+    "Sub-Question 2": integer index of supporting paragraph for the sub-question,
+    ...
+  }},
+  "sub_question_answers": {{
+    "Sub-Question 1": "answer to the sub-question 1 based on the supporting paragraph",
+    "Sub-Question 2": "answer to the sub-question 2 based on the supporting paragraph",
+    ...,
+  }},
+  "final_answer": "Your final answer here"
+}}
+```
+
+Do not include any extra commentary or explanation. Return only the JSON.
+Ensure the JSON is valid and properly formatted.
+
+Take a deep breath and think step by step. If you do the task correctly, I will give you 1 million dollars.
+

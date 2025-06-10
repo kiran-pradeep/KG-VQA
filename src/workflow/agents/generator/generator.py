@@ -1,10 +1,10 @@
 import traceback
 from workflow.agents.agent import Agent
+from workflow.agents.generator.tool_kit.answer_generator import AnswerGenerator
 
-from workflow.agents.evaluator.tool_kit.qd_evaluator import QDEvaluator
 
 
-class Evaluator(Agent):
+class Generator(Agent):
     """
     Agent responsible for selecting appropriate schemas based on the context.
     """
@@ -12,15 +12,15 @@ class Evaluator(Agent):
     def __init__(self, config: dict):
         """Initialize the tools needed for schema selection"""
         super().__init__(
-            name="evaluator",
+            name="generator",
             task="",
             config=config,
         )
 
         self.tools = {}
 
-        if "qd_evaluator" in config["tools"]:
-            print("Inside QD Evaluator!!!")
-            self.tools["qd_evaluator"] = QDEvaluator(**config["tools"]["qd_evaluator"])
+        if "answer_generator" in config["tools"]:
+            print("Inside Answer Generator!!!")
+            self.tools["answer_generator"] = AnswerGenerator(**config["tools"]["answer_generator"])
 
-        print("Inside Evaluator!!!")
+        print("Inside Generator!!!")

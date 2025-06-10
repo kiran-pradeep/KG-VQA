@@ -39,10 +39,11 @@ class QDEvaluator(Tool):
         Returns:
             None
         """
+        sub_questions = state.sub_questions
         request_kwargs = {
             "CONTEXT": state.get_formatted_paragraphs(),
             "QUESTION": state.task.question,
-            "SUB_QUESTIONS": state.get_formatted_sub_questions(),
+            "SUB_QUESTIONS": state.get_formatted_sub_questions(sub_questions),
         }
         
         response = async_llm_chain_call(
@@ -111,7 +112,7 @@ class QDEvaluator(Tool):
     def _get_updates(self, state: SystemState) -> Dict:
         updates = {
             "question": state.task.question,
-            "sub_questions": [sub_question.question for sub_question in state.task.question_decomposition],
+            "ground_truth_sub_questions": [sub_question.question for sub_question in state.task.question_decomposition],
             "chain_of_thought_reasoning": self.chain_of_thought_reasoning,
             "relevance": self.relevance,
             "completeness": self.completeness,

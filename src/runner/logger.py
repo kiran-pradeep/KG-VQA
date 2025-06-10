@@ -6,6 +6,7 @@ from typing import Any, List, Dict, Union
 
 from runner.task import SubQuestion, Task
 
+
 class Logger:
     _instance = None
     _lock = Lock()
@@ -25,7 +26,7 @@ class Logger:
             ValueError: If the Logger instance has not been initialized.
         """
         with cls._lock:
-            if (question_id is not None):
+            if question_id is not None:
                 cls._instance = super(Logger, cls).__new__(cls)
                 cls._instance._init(question_id, result_directory)
             else:
@@ -59,7 +60,7 @@ class Logger:
         log_level_attr = getattr(logging, log_level.upper(), None)
         if log_level_attr is None:
             raise ValueError(f"Invalid log level: {log_level}")
-        logging.basicConfig(level=log_level_attr, format='%(levelname)s: %(message)s')
+        logging.basicConfig(level=log_level_attr, format="%(levelname)s: %(message)s")
 
     def log(self, message: str, log_level: str = "info", task: Task = None):
         """
@@ -93,7 +94,9 @@ class Logger:
             with log_file_path.open("a") as file:
                 for conversation in conversations:
                     text = conversation["text"]
-                    file.write(f"############################## {conversation['from']} at step {conversation['step']} ##############################\n\n")
+                    file.write(
+                        f"############################## {conversation['from']} at step {conversation['step']} ##############################\n\n"
+                    )
                     if isinstance(text, str):
                         file.write(text)
                     elif isinstance(text, (list, dict)):
@@ -115,18 +118,18 @@ class Logger:
 
         def subquestion_to_dict(sq):
             return {
-                'id': sq.id,
-                'question': sq.question,
-                'answer': sq.answer,
-                'paragraph_support_idx': sq.paragraph_support_idx
+                "id": sq.id,
+                "question": sq.question,
+                "answer": sq.answer,
+                "paragraph_support_idx": sq.paragraph_support_idx,
             }
 
         # Apply this to the sub_questions list before dumping
         for entry in execution_history:
-            if 'final_result' in entry and 'sub_questions' in entry['final_result']:
-                entry['final_result']['sub_questions'] = [
+            if "qd_result" in entry and "sub_questions" in entry["qd_result"]:
+                entry["qd_result"]["sub_questions"] = [
                     subquestion_to_dict(sq) if isinstance(sq, SubQuestion) else sq
-                    for sq in entry['final_result']['sub_questions']
+                    for sq in entry["qd_result"]["sub_questions"]
                 ]
 
         with file_path.open("w") as file:

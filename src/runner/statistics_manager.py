@@ -3,6 +3,13 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Union, Tuple
 
+from utils.MuSiQue.evaluate import evaluate_single_instance
+from utils.MuSiQue.metrics.answer import AnswerMetric
+from utils.MuSiQue.metrics.group_answer_sufficiency import GroupAnswerSufficiencyMetric
+from utils.MuSiQue.metrics.group_support_sufficiency import GroupSupportSufficiencyMetric
+from utils.MuSiQue.metrics.support import SupportMetric
+from workflow.system_state import SystemState
+
 
 @dataclass
 class Statistics:
@@ -18,7 +25,7 @@ class Statistics:
     inadeq_decomp: Dict[str, List[str]] = field(default_factory=dict)
     incoherent: Dict[str, List[str]] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Dict[str, Union[Dict[str, int], List[Tuple[str, str]]]]]:
+    def to_dict(self, all_metrics) -> Dict[str, Dict[str, Union[Dict[str, int], List[Tuple[str, str]]]]]:
         """
         Converts the statistics data to a dictionary format.
 
@@ -26,7 +33,12 @@ class Statistics:
             Dict[str, Dict[str, Union[Dict[str, int], List[Tuple[str, str]]]]]: The statistics data as a dictionary.
         """
         return {
-            "counts": {
+            "answer_metrics": {
+                "answer_f1": round(all_metrics["answer_metric"].get_metric()[1], 3),
+                "answer_em": round(all_metrics["answer_metric"].get_metric()[0], 3),
+                "support_f1": round(all_metrics["support_metric"].get_metric()[1], 3),
+            },
+            "qd_counts": {
                 key: {
                     "correct": len(self.corrects.get(key, [])),
                     "incorrect": len(self.incorrects.get(key, [])),
@@ -71,6 +83,14 @@ class StatisticsManager:
         self.result_directory = Path(result_directory)
         self.statistics = Statistics()
 
+
+        self.all_metrics = {
+            "answer_metric": AnswerMetric(),
+            "support_metric": SupportMetric(),
+            "group_answer_sufficiency_metric": GroupAnswerSufficiencyMetric(),
+            "group_support_sufficiency_metric": GroupSupportSufficiencyMetric(),
+        }
+
         # Ensure the statistics file exists
         self.statistics_file_path = self.result_directory / "-statistics.json"
         if not self.statistics_file_path.exists():
@@ -79,8 +99,8 @@ class StatisticsManager:
         else:
             data = json.load(open(self.statistics_file_path))
             # Extract the counts and populate total dictionary
-            if "counts" in data:
-                for key, count_data in data["counts"].items():
+            if "qd_counts" in data:
+                for key, count_data in data["qd_counts"].items():
                     self.statistics.total[key] = count_data.get("total", 0)
             
             # Extract the ids data and populate the respective dictionaries
@@ -114,61 +134,67 @@ class StatisticsManager:
                     if "incoherent" in id_data:
                         self.statistics.incoherent[key] = [tuple(item) for item in id_data["incoherent"]]
 
-    def update_stats(self, question_id: str, validation_for: str, result: Dict[str, Any]):
+    def update_stats(self, question_id: str, validation_for: str, result: Dict[str, Any], state: SystemState=None):
         """
         Updates the statistics based on the validation result.
 
         Args:
-            db_id (str): The database ID.
             question_id (str): The question ID.
             validation_for (str): The validation context.
             result (Dict[str, Any]): The validation result.
         """
-        exec_res = result["exec_res"]
-        exec_err = result["exec_err"]
+        if validation_for == "final_result":
+            if not state:
+                raise NotImplementedError
+            predicted_dict = {
+                "id": state.task.id,
+                "predicted_answer": state.answer,
+                "predicted_support_idxs": state.support_indices,
+                "predicted_answerable": True,
+            }
+            actual_dict = state.task.model_dump()
+            evaluate_single_instance(predicted_dict, actual_dict, self.all_metrics)
 
-        # relevant = result["predicted_label"]["relevance"]
-        # complete = result["predicted_label"]["completene"]
-        # optimal = result["predicted_label"]["optimal"]
-        # coherent = result["predicted_label"]["coherent"]
-        # correct = result["predicted_label"]["correct"]
-
-        self.statistics.total[validation_for] = self.statistics.total.get(validation_for, 0) + 1
-
-        if exec_res == 1:
-            if validation_for not in self.statistics.corrects:
-                self.statistics.corrects[validation_for] = []
-            self.statistics.corrects[validation_for].append(question_id)
         else:
-            if "!=" in exec_err:
-                if validation_for not in self.statistics.incorrects:
-                    self.statistics.incorrects[validation_for] = []
-                    self.statistics.incorrect_decomp[validation_for] = []
-                    self.statistics.irrelevant[validation_for] = []
-                    self.statistics.incomplete[validation_for] = []
-                    self.statistics.inadeq_decomp[validation_for] = []
-                    self.statistics.incoherent[validation_for] = []
-                self.statistics.incorrects[validation_for].append(question_id)
-                if "incorrect" in exec_err.lower() or "None" in exec_err.lower():
-                    self.statistics.incorrect_decomp[validation_for].append(question_id)
-                if "irrelevant" in exec_err.lower() or "None" in exec_err.lower():
-                    self.statistics.irrelevant[validation_for].append(question_id)
-                if "incomplete" in exec_err.lower() or "None" in exec_err.lower():
-                    self.statistics.incomplete[validation_for].append(question_id)
-                if "under-decomposed" in exec_err.lower() or "over-decomposed" in exec_err.lower() or "None" in exec_err.lower():
-                    self.statistics.inadeq_decomp[validation_for].append(question_id)
-                if "incoherent" in exec_err.lower() or "None" in exec_err.lower():
-                    self.statistics.incoherent[validation_for].append(question_id)
+            exec_res = result["exec_res"]
+            exec_err = result["exec_err"]
 
-                
+            self.statistics.total[validation_for] = self.statistics.total.get(validation_for, 0) + 1
+
+            if exec_res == 1:
+                if validation_for not in self.statistics.corrects:
+                    self.statistics.corrects[validation_for] = []
+                self.statistics.corrects[validation_for].append(question_id)
             else:
-                if validation_for not in self.statistics.errors:
-                    self.statistics.errors[validation_for] = []
-                self.statistics.errors[validation_for].append((question_id, exec_err))
+                if "!=" in exec_err:
+                    if validation_for not in self.statistics.incorrects:
+                        self.statistics.incorrects[validation_for] = []
+                        self.statistics.incorrect_decomp[validation_for] = []
+                        self.statistics.irrelevant[validation_for] = []
+                        self.statistics.incomplete[validation_for] = []
+                        self.statistics.inadeq_decomp[validation_for] = []
+                        self.statistics.incoherent[validation_for] = []
+                    self.statistics.incorrects[validation_for].append(question_id)
+                    if "incorrect" in exec_err.lower() or "None" in exec_err.lower():
+                        self.statistics.incorrect_decomp[validation_for].append(question_id)
+                    if "irrelevant" in exec_err.lower() or "None" in exec_err.lower():
+                        self.statistics.irrelevant[validation_for].append(question_id)
+                    if "incomplete" in exec_err.lower() or "None" in exec_err.lower():
+                        self.statistics.incomplete[validation_for].append(question_id)
+                    if "under-decomposed" in exec_err.lower() or "over-decomposed" in exec_err.lower() or "None" in exec_err.lower():
+                        self.statistics.inadeq_decomp[validation_for].append(question_id)
+                    if "incoherent" in exec_err.lower() or "None" in exec_err.lower():
+                        self.statistics.incoherent[validation_for].append(question_id)
+
+                    
+                else:
+                    if validation_for not in self.statistics.errors:
+                        self.statistics.errors[validation_for] = []
+                    self.statistics.errors[validation_for].append((question_id, exec_err))
 
     def dump_statistics_to_file(self):
         """
         Dumps the current statistics to a JSON file.
         """
         with self.statistics_file_path.open('w') as f:
-            json.dump(self.statistics.to_dict(), f, indent=4)
+            json.dump(self.statistics.to_dict(self.all_metrics), f, indent=4)

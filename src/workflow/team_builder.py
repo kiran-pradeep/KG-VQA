@@ -2,19 +2,23 @@ import logging
 from typing import Dict, Any
 
 from langgraph.graph import END, StateGraph
+# from workflow.agents.evaluation import Accuracy
+from workflow.agents.decomposer.decomposer import Decomposer
+from workflow.agents.qd_evaluation import QDAccuracy
 from workflow.system_state import SystemState
 
 from workflow.agents.information_retriever.information_retriever import InformationRetriever
 from workflow.agents.evaluator.evaluator import Evaluator
+from workflow.agents.generator.generator import Generator
 # from workflow.agents.schema_selector.schema_selector import SchemaSelector
 # from workflow.agents.candidate_generator.candidate_generator import CandidateGenerator
 # from workflow.agents.unit_tester.unit_tester import UnitTester
 
-from workflow.agents.evaluation import QDAccuracy
-
 AGENT_CLASSES = {
     "information_retriever": InformationRetriever,
     "evaluator": Evaluator,
+    "generator": Generator,
+    "decomposer": Decomposer,
 }
 
 class ResQTeamBuilder:
@@ -27,9 +31,10 @@ class ResQTeamBuilder:
         agents = {agent_name: agent_config for agent_name, agent_config in self.config["team_agents"].items() 
                   if agent_name in AGENT_CLASSES}
         self._add_agents(agents)
-        self.team.add_node("evaluation", QDAccuracy())
-        agents_with_evaluation = list(agents.keys()) + ["evaluation"]
-        # agents_with_evaluation = list(agents.keys())
+        self.team.add_node("qd_evaluation", QDAccuracy())
+        # self.team.add_node("evaluation", Accuracy())
+        agents_with_evaluation = list(agents.keys()) + ["qd_evaluation"] # + ["evaluation"]
+        # agents_with_evaluation = list(agents.keys())        
         self.team.set_entry_point(agents_with_evaluation[0])
         connections = [(agents_with_evaluation[i], agents_with_evaluation[i+1]) 
                        for i in range(len(agents_with_evaluation)-1)]
