@@ -1,1 +1,1 @@
-# EvalQD
+# KG-VQA
